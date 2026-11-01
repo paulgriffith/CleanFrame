@@ -37,7 +37,7 @@
   ];
   /* Art background: a shuffled run through the personal photo catalogue, a new photo every ART_SECONDS and
      whenever the app returns to the foreground, with the interface fading out after IDLE_MS until a key wakes it. */
-  var ART = window.CleanFrameArt || [], ART_SECONDS = 15, IDLE_MS = 8000, ART_DOCK_LEFT = 64, ART_DOCK_BOTTOM = 56, artOrder = [], artPos = -1, artLoading = false, idleTimer = 0, idle = false;
+  var ART = window.CleanFrameArt || [], ART_SECONDS = 20, IDLE_MS = 8000, ART_DOCK_LEFT = 64, ART_DOCK_BOTTOM = 56, artOrder = [], artPos = -1, artLoading = false, idleTimer = 0, idle = false;
   function shuffleArt() {
     var i, j, t;
     artOrder = ART.map(function (_, k) { return k; });

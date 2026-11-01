@@ -376,7 +376,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 
 /* ---------- Unified appearance ---------- */
 .stage{--mute:rgba(246,241,231,.76);--faint:rgba(246,241,231,.58);--line:rgba(246,241,231,.18);--knock:#1d1a16;--solid-mute:rgba(29,26,22,.68);--solid-warn:#8a4b00;--ink:#f6f1e7;--ground:#0d0d0d;--tr-ink:var(--ink);--br-ink:var(--ink);--tr-rest:.62;--br-rest:.62;--tr-peer:.434;--br-peer:.434;--tr-a:.20;--tr-b:.12;--br-a:.20;--br-b:.12;--tr-under:rgba(14,10,6,.38);--br-under:rgba(14,10,6,.38);--tr-shadow:0 1px 2px rgba(14,10,6,.4),0 2px 8px rgba(14,10,6,.24);--br-shadow:var(--tr-shadow);background:var(--ground)}
-.bg-light{--mute:rgba(29,26,22,.70);--faint:rgba(29,26,22,.52);--line:rgba(29,26,22,.14);--knock:#f2efe8;--solid-mute:rgba(242,239,232,.72);--solid-warn:#e8b36a;--ground:#f2efe8;--ink:#1d1a16;--warn:#8a4b00;--solid:#1d1a16;--solid-ink:#f2efe8;--plate:rgba(29,26,22,.07);--plate-edge:none;--lift:rgba(29,26,22,.13);--tr-peer:.52;--br-peer:.52}
+.bg-light,.bg-art{--mute:rgba(29,26,22,.70);--faint:rgba(29,26,22,.52);--line:rgba(29,26,22,.14);--knock:#f2efe8;--solid-mute:rgba(242,239,232,.72);--solid-warn:#e8b36a;--ground:#f2efe8;--ink:#1d1a16;--warn:#8a4b00;--solid:#1d1a16;--solid-ink:#f2efe8;--plate:rgba(29,26,22,.07);--plate-edge:none;--lift:rgba(29,26,22,.13);--tr-peer:.52;--br-peer:.52}
 .bg-dark{--mute:rgba(246,241,231,.72);--faint:rgba(246,241,231,.50);--line:rgba(246,241,231,.14);--knock:#0d0d0d;--solid-mute:rgba(29,26,22,.68);--solid-warn:#8a4b00;--warn:#e8b36a;--plate:rgba(246,241,231,.08);--plate-edge:inset 0 1px 0 rgba(255,250,240,.1);--lift:rgba(246,241,231,.15)}
 .scene{position:absolute;left:0;top:0;width:1920px;height:1080px;background:var(--ground);overflow:hidden;transform-origin:0 0}
 .at-appearance .scene,.at-wallpaper .scene{z-index:2;transform:translate3d(858px,288px,0) scale(.48);border-radius:32px;pointer-events:none}
@@ -384,6 +384,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .l-list .caption{left:auto;right:140px;top:112px;align-items:flex-end;text-align:right;max-width:880px}
 .l-list.at-arrange .caption{top:72px}
 .bg-dark .clock,.bg-light .clock{opacity:.72;text-shadow:none}
+.bg-art .clock{color:#1d1a16;opacity:.86;text-shadow:none}
 .bg-dark .cap-title,.bg-light .cap-title,.bg-dark .cap-line,.bg-light .cap-line{color:var(--ink);text-shadow:none}
 .l-list .quiet-utils{right:122.1px;top:auto;bottom:112px;flex-direction:column;align-items:flex-end}
 .l-list .quiet-utils .u{flex:none}
@@ -459,7 +460,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .util-focus-label{color:var(--tr-ink);text-shadow:var(--tr-shadow)}
 .l-list .util-focus-label{color:var(--br-ink);text-shadow:var(--br-shadow)}
 .bg-dark .quiet-utils .u,.bg-light .quiet-utils .u,.bg-dark .util-focus-label,.bg-light .util-focus-label{text-shadow:none}
-.bg-dark .ut-underlay,.bg-light .ut-underlay{display:none}
+.bg-dark .ut-underlay,.bg-light .ut-underlay,.bg-art .ut-underlay{display:none}
 /* Generated photo-family inks apply only to unlocked Home palettes. */
 .bg-photo.has-adaptive-ink .home{--ink:var(--home-app-ink);--ph-ink:var(--home-app-ink);color:var(--home-app-ink)}
 .bg-photo.has-adaptive-ink.l-list .caption .clock{color:var(--tr-clock-ink)}
@@ -633,3 +634,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000}
 .l-list .quiet-utils.is-text .u-content>*+*{margin-left:0;margin-right:0}
 .quiet-utils.is-text .u-content>*+*{margin-left:0}
 .l-list .quiet-utils.is-text .u .u-content>*+*{margin-right:0}
+
+/* Art background: matted personal photos. Dark ink over the paper matte, a half-size dock bottom-left, and an idle fade. */
+.bg-art .scrim,.bg-art .shade,.bg-art .ph-dim,.bg-art .ph-scrim,.bg-art .ph-col,.bg-art .ut-dim{display:none}
+.bg-art .dock{transform:scale(.5);transform-origin:0 0}
+.bg-art .mat{background:rgba(255,255,255,.58);box-shadow:0 2px 14px rgba(29,26,22,.10)}
+.bg-art .mat-img,.bg-art .mat-scrim,.bg-art .mat-veil{display:none}
+.bg-art .mat::after{box-shadow:inset 0 0 0 1px rgba(29,26,22,.08),inset 0 1px 0 rgba(255,255,255,.7)}
+.bg-art .quiet-utils .u,.bg-art .quiet-utils .u.is-focus,.bg-art .quiet-utils .u.is-idle{color:#1d1a16;text-shadow:none}
+.bg-art .photo{transition:opacity 900ms linear}
+.bg-art .home{transition:opacity 400ms linear}
+.bg-art.is-idle .home{opacity:0;transition:opacity 900ms linear;pointer-events:none}

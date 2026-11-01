@@ -35,6 +35,15 @@
     { id: '5', name: 'Every 5 minutes', min: 5 }, { id: '15', name: 'Every 15 minutes', min: 15 },
     { id: '60', name: 'Every hour', min: 60 }
   ];
+  /* Art background: a shuffled run through the personal photo catalogue, a new photo every ART_SECONDS and
+     whenever the app returns to the foreground, with the interface fading out after IDLE_MS until a key wakes it. */
+  var ART = window.CleanFrameArt || [], ART_SECONDS = 15, IDLE_MS = 8000, ART_DOCK_LEFT = 64, ART_DOCK_BOTTOM = 56, artOrder = [], artPos = -1, artLoading = false, idleTimer = 0, idle = false;
+  function shuffleArt() {
+    var i, j, t;
+    artOrder = ART.map(function (_, k) { return k; });
+    for (i = artOrder.length - 1; i > 0; i--) { j = Math.floor(Math.random() * (i + 1)); t = artOrder[i]; artOrder[i] = artOrder[j]; artOrder[j] = t; }
+    artPos = -1;
+  }
   var KEY = 'cleanframe.home.v1', storageOk = true, catalog = { loading: false, loaded: false, error: null, request: 0, revision: 0 };
   var QA = window.ShoreQA = { minuteMs: window.ShoreQA && window.ShoreQA.minuteMs || 60000 };
   var FONTS = {
@@ -46,9 +55,9 @@
     newsreader: { name: 'Newsreader', family: 'Study Newsreader', display: 400, ui: 400, clock: 400 }
   };
   var PRIVATE_FONTS = window.CleanFramePrivateFontIDs || [], fontMetrics = {}, unavailableFonts = {}, widthCache = {}, fontRevision = 0, fontsReady = false;
-  var LOOK_VALUES = { bg: ['dark', 'light', 'photo'], layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], font: Object.keys(FONTS).filter(function (id) { return id === 'manrope' || PRIVATE_FONTS.indexOf(id) >= 0; }), controls: ['icons', 'both', 'text'], focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] };
+  var LOOK_VALUES = { bg: ['dark', 'light', 'photo', 'art'], layout: ['list', 'dock'], apps: ['icons', 'both', 'text'], font: Object.keys(FONTS).filter(function (id) { return id === 'manrope' || PRIVATE_FONTS.indexOf(id) >= 0; }), controls: ['icons', 'both', 'text'], focus: ['type', 'glass'], material: ['soft', 'frost', 'tint'] };
   var LOOK_NAMES = { bg: 'Background', layout: 'Layout', apps: 'Apps', font: 'Font', controls: 'Home controls', focus: 'Focus', material: 'Material' };
-  var VALUE_NAMES = { dark: 'Dark', light: 'Light', photo: 'Photo', list: 'List', dock: 'Dock', type: 'Type', glass: 'Glass', soft: 'Soft', frost: 'Frost', tint: 'Clear tint', icons: 'Icons', both: 'Icons and text', text: 'Text' };
+  var VALUE_NAMES = { dark: 'Dark', light: 'Light', photo: 'Photo', art: 'Art', list: 'List', dock: 'Dock', type: 'Type', glass: 'Glass', soft: 'Soft', frost: 'Frost', tint: 'Clear tint', icons: 'Icons', both: 'Icons and text', text: 'Text' };
   var UTIL = { art: ['Art Mode', 'art'], apps: ['All apps', 'apps'], arrange: ['Arrange', 'arrange'], settings: ['Settings', 'settings'] };
   var MSG = {
     leave: { title: 'Leave Home?', line: 'Open Samsung Home?', note: '', actions: [['stay', 'Stay'], ['samsung', 'Samsung Home']] }
@@ -343,7 +352,7 @@
     if (!h.length) h = HOME_DEFAULT.slice();
     (Array.isArray(s.recent) ? s.recent : []).forEach(function (id) { if (safeId(id) && app(id) && h.indexOf(id) < 0 && recent.indexOf(id) < 0 && recent.length < 5) recent.push(id); });
     return {
-      bg: pick(modern.bg, LOOK_VALUES.bg, legacyList ? 'dark' : 'photo'), layout: pick(modern.layout, LOOK_VALUES.layout, legacyList ? 'list' : 'dock'),
+      bg: s.artDefaultApplied ? pick(modern.bg, LOOK_VALUES.bg, legacyList ? 'dark' : 'art') : (ART.length ? 'art' : pick(modern.bg, LOOK_VALUES.bg, legacyList ? 'dark' : 'photo')), layout: pick(modern.layout, LOOK_VALUES.layout, legacyList ? 'list' : 'dock'),
       apps: pick(modern.apps, LOOK_VALUES.apps, legacyList ? 'text' : 'both'), controls: pick(modern.controls, LOOK_VALUES.controls, 'both'),
       focus: pick(modern.focus, LOOK_VALUES.focus, legacyList ? 'type' : 'glass'), material: pick(modern.material, LOOK_VALUES.material, 'soft'),
       font: pick(modern.font, LOOK_VALUES.font, 'manrope'), wall: wall(modern.wall || s.wallpaper) ? modern.wall || s.wallpaper : WALLS[0].id,
@@ -356,6 +365,7 @@
     Object.keys(c).forEach(function (key) { out[key] = c[key]; });
     out.version = 2; out.look = lookOf(c); out.dock = c.home.slice(); out.wallpaper = c.wall;
     out.theme = c.layout === 'list' ? 'list' : 'shore';
+    out.artDefaultApplied = true;
     out.appRecords = [];
     c.home.concat(c.recent).forEach(function (key) {
       var a = app(key);
@@ -852,7 +862,7 @@
     var flat = S.c.bg !== 'photo', inactive = !materialApplies();
     function options(axis, values, disabled) { return values.map(function (value) { return choice(axis, value, disabled); }); }
     if (t.group === 'background') return [
-      { id: 'bg', title: 'Background type', items: options('bg', ['photo', 'light', 'dark']) },
+      { id: 'bg', title: 'Background type', items: options('bg', ['art', 'photo', 'light', 'dark']) },
       { id: 'wall', title: 'Wallpaper', items: [{ action: 'background.wallpaper', label: wall(S.c.wall).name, thumbnail: true, disabled: flat }] },
       { id: 'rotation', title: 'Rotation', items: [{ action: 'background.rotation', label: mode().name, disabled: flat }], reason: flat ? 'Choose Photo to use wallpaper and rotation.' : '' }
     ];
@@ -973,6 +983,7 @@
     norm();
     render();
     syncRotation();
+    armIdle();
   }
 
   /* ---------- Rendering ---------- */
@@ -1025,6 +1036,8 @@
     else stage.style.removeProperty('--clock-ink');
     if (!adaptive && shown.dockClockInk) stage.style.setProperty('--dock-clock-ink', shown.dockClockInk);
     else stage.style.removeProperty('--dock-clock-ink');
+    if (idle) stage.className += ' is-idle';
+    if (S.c.bg === 'art') ensureArt();
     applyHomeFont();
     if (!sheet) renderHome(t);
     renderSheet(t, sheet);
@@ -1211,6 +1224,8 @@
     var focusItem = items[anchor], s, ax, label, width;
 
     dock.className = 'dock' + (empty ? ' is-empty' : '');
+    // Art background: the dock renders at half scale (CSS transform, origin top-left) in the bottom-left corner.
+    if (S.c.bg === 'art') { g.x = ART_DOCK_LEFT; g.y = 1080 - ART_DOCK_BOTTOM - g.h / 2; }
     dock.style.left = g.x + 'px'; dock.style.top = g.y + 'px'; dock.style.width = g.w + 'px'; dock.style.height = g.h + 'px';
     dock.style.setProperty('--tile-w', g.tw + 'px'); dock.style.setProperty('--tile-h', g.th + 'px'); dock.style.setProperty('--dock-h', g.h + 'px');
     dock.style.setProperty('--nudge-top', ((g.th - 48) / 2) + 'px');
@@ -1637,6 +1652,33 @@
     else { im.onload = ready; im.onerror = function () { finish(false); }; }
   }
   function swapImg(k, im) { var old = IMG[k]; if (old === im) return; im.style.cssText = old.style.cssText; if (old.id) im.id = old.id; old.parentNode.replaceChild(im, old); IMG[k] = im; }
+  function nextArt(done) {
+    var im;
+    if (!ART.length || artLoading) { if (done) done(false); return; }
+    if (artPos + 1 >= artOrder.length) shuffleArt();
+    artPos++; artLoading = true;
+    im = makeImg('photo', ART[artOrder[artPos]].src);
+    whenReady(im, function (ok) {
+      var old = IMG.photo;
+      artLoading = false;
+      if (!ok || S.c.bg !== 'art') { if (done) done(false); return; }
+      im.id = old.id; old.removeAttribute('id'); im.style.opacity = '0';
+      old.parentNode.insertBefore(im, old.nextSibling);
+      IMG.photo = im; S.artShown = artPos;
+      window.setTimeout(function () { im.style.opacity = '1'; }, 30);
+      window.setTimeout(function () { if (old.parentNode) old.parentNode.removeChild(old); }, 1100);
+      if (done) done(true);
+    });
+  }
+  function ensureArt() { if (S.c.bg === 'art' && typeof S.artShown !== 'number' && !artLoading) nextArt(); }
+  function armIdle() {
+    clearTimeout(idleTimer); idleTimer = 0;
+    if (idle) { idle = false; stage.className = stage.className.replace(' is-idle', ''); }
+    if (S.c.bg !== 'art' || top().id !== 'home' || document.hidden) return;
+    idleTimer = setTimeout(function () {
+      if (S.c.bg === 'art' && top().id === 'home' && !document.hidden) { idle = true; render(); }
+    }, IDLE_MS);
+  }
   function bundleKey(look) { return look.wall + '|' + look.material; }
   function loadBundle(look, token, done) {
     var imgs = { photo: makeImg('photo', WP + look.wall + '.jpg'), bg: makeImg('sheet-bg', WP + look.wall + '-panel.jpg') }, keys, left, allOk = true;
@@ -1658,6 +1700,7 @@
       S.bundleKey = bundle.key;
     }
     S.shown = { bg: look.bg, wall: look.wall, material: look.material, font: look.font };
+    if (look.bg === 'art') S.bundleKey = ''; else S.artShown = null;
     phFields.concat(utFields).forEach(function (el) { var p = el._placement; if (p) fieldTransform(el, p.x, p.y, p.width, p.height); });
     S.wallShown = look.wall; S.wallPending = null; S.wallError = null;
   }
@@ -1751,22 +1794,25 @@
 
   /* ---------- Lifecycle and remote input ---------- */
   var clockTimer = 0, rotationTimer = 0, activeSince = 0, activeMs = 0, rotationKey = '';
-  function rotationActive() { return !document.hidden && top().id === 'home' && S.c.bg === 'photo' && !S.pending && mode().min > 0; }
+  function rotationMs() { return S.c.bg === 'art' ? (ART.length > 1 ? ART_SECONDS * 1000 : 0) : S.c.bg === 'photo' ? mode().min * QA.minuteMs : 0; }
+  function rotationActive() { return !document.hidden && top().id === 'home' && !S.pending && rotationMs() > 0; }
   function pauseRotation() {
     if (activeSince) { activeMs += Date.now() - activeSince; activeSince = 0; }
     clearTimeout(rotationTimer); rotationTimer = 0;
   }
   function resetRotation() { pauseRotation(); activeMs = 0; rotationKey = ''; }
   function syncRotation() {
-    var key = S.c.wall + '|' + S.c.mode;
+    var key = S.c.bg + '|' + S.c.wall + '|' + S.c.mode;
     pauseRotation();
     if (key !== rotationKey) { activeMs = 0; rotationKey = key; }
     if (!rotationActive()) return;
     activeSince = Date.now();
     rotationTimer = setTimeout(function () {
       pauseRotation(); activeMs = 0;
-      if (rotationActive()) setLook({ wall: WALLS[(wallIndex(S.c.wall) + 1) % WALLS.length].id }, { row: 'bg' });
-    }, Math.max(10, mode().min * QA.minuteMs - activeMs));
+      if (!rotationActive()) return;
+      if (S.c.bg === 'art') { nextArt(); syncRotation(); }
+      else setLook({ wall: WALLS[(wallIndex(S.c.wall) + 1) % WALLS.length].id }, { row: 'bg' });
+    }, Math.max(10, rotationMs() - activeMs));
   }
   function updateClock() {
     clearTimeout(clockTimer);
@@ -1775,7 +1821,7 @@
     clockTimer = setTimeout(updateClock, 60000 - (Date.now() % 60000) + 30);
   }
   function focusStage() { try { stage.focus({ preventScroll: true }); } catch (e) { stage.focus(); } }
-  function after() { norm(); render(); syncRotation(); }
+  function after() { norm(); render(); syncRotation(); armIdle(); }
   function goScene(name) {
     if (top().id === 'wallpaper') cancelWallpaperTimer(top());
     S.stack = [S.stack[0]]; S.stack[0].f.zone = 'apps'; clearSession(); restoreLook();
@@ -1840,6 +1886,7 @@
     if (code === 9) { ev.preventDefault(); return; }
     if (!k || ev.metaKey || ev.ctrlKey || ev.altKey) return;
     ev.preventDefault();
+    if (idle) { armIdle(); return; }
     if (k === 'ok' || k === 'back') { if (ev.repeat || heldKeys[code]) return; heldKeys[code] = true; }
     press(k);
   });
@@ -1851,6 +1898,7 @@
     if (document.hidden) { pauseRotation(); clearTimeout(clockTimer); }
     else {
       release();
+      if (S.c.bg === 'art' && typeof S.artShown === 'number') nextArt();
       if (S.c.bg === 'photo' && !S.pending && !S.previewBundle && (!committedBundle || S.bundleKey !== bundleKey(S.c))) setLook({}, { transient: true, startup: true });
       after(); updateClock(); focusStage();
     }

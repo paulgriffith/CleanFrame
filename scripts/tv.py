@@ -55,6 +55,9 @@ if 'connected to ' not in connected.lower() and 'already connected' not in conne
 if args.action == 'info':
     run('-s', serial, 'capability')
 elif args.action == 'launch':
+    # A running instance keeps its old code after an in-place install; stop it so the launch loads the new package.
+    subprocess.run([str(sdb), '-s', serial, 'shell', '0', 'kill', app_id], text=True, capture_output=True, timeout=45)
+    time.sleep(1.5)
     output = run('-s', serial, 'shell', '0', 'execute', app_id)
     if 'successfully launched' not in output:
         raise SystemExit('App launch was not confirmed. Check the TV.')
